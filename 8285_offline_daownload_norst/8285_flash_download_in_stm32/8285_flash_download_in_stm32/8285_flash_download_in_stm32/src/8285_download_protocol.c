@@ -132,12 +132,8 @@ void Data_formatt_write(uint8_t *packet,int packet_len,uint8_t packet_type)
 	{
 		Debug_usart_write(packet,24,DATA_SEND_RECV_DABUG);
 	}
-	///else
-	//{
-	//	Debug_usart_write(buf,i+1);
-	//}
 #endif
-	//Debug_usart_write("send bin ..\r\n",13);
+
 }
 
 int Data_formatt_read(uint8_t *packet,int len)
@@ -225,25 +221,21 @@ int device_sync(void)
 	return 1;
 }
 
-int Change_baud_command(uint32_t baud)
+int Change_baud_command(int baud)
 {
 	//uint8_t change_command[16] = {
 	//	0x00,0x0f,0x08,0x00,0x00,0x00,0x00,0x00,
 	//	0xc0,0xc6,0x2d,0x00,0x00,0x00,0x00,0x00};
 	uint8_t change_command[16] = {
 			0x00,0x0f,0x08,0x00,0x00,0x00,0x00,0x00,
-			0x40,0x42,0x0f,0x00,0x00,0x00,0x00,0x00};
+			0x10,0x55,0x22,0x00,0x00,0x00,0x00,0x00};
 
 	uint8_t change_recv[20] = {0};
 	uint8_t change_true[10] = {0x01,0x0f,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 	uint8_t i = 0;
 
-	//change_command[8] =  0xFF & baud;
-	//change_command[9] =  0xFF & (baud>>2);
-	//change_command[10] = 0xFF & (baud>>4);
-
 	Data_formatt_write(change_command,16,HA_HEAD_HA_TAIL);
-	wait_rxdata_available(5);
+	wait_rxdata_available(10);
 	Data_formatt_read(change_recv,20);
 	initDataPool(&stm32rx);
 	usart1_change_baud(baud);
@@ -803,12 +795,15 @@ void update_light_status(uint8_t status)
 
 int download_start(void)
 {
-	uint8_t i,cnt = 0;
+	uint8_t cnt = 0;
 	uint8_t ret = 1;
+	//int i = 1000000;
+
+	//ret = (uint8_t)(i>>2);
 
 	//update_light_status(DOWNLOAD_NOW_STATUS);
 	//change_datacsv_info("Y 10000d85e1 b58f5ee9-09d6-42c7-99be-4afb9c2b30b8 d0:27:00:1b:09:12 d0:27:00:1b:09:13 PSF-A01-GL");
-	//Debug_usart_write(data_sector_data,4095);
+	//Debug_usart_write(&ret,1,INFO_DABUG);
 	//return 1;
 	if(nodata_flag)
 	{
@@ -838,7 +833,7 @@ int download_start(void)
 	{
 		Debug_usart_write("stub_ok\r\n",9,INFO_DABUG);
 		//ret = Change_baud_command(923076);
-		ret = Change_baud_command(1000000);
+		ret = Change_baud_command(2250000);
 		iwdg_reload();
 	}
 

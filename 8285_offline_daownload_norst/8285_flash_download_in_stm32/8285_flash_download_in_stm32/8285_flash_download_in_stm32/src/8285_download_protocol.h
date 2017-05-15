@@ -503,7 +503,7 @@ uint8_t  stub_data[792] = {
 void Data_formatt_write(uint8_t *packet,int packet_len,uint8_t packet_type);
 int Data_formatt_read(uint8_t *packet,int len);
 int device_sync(void);
-int Change_baud_command(uint32_t baud);
+int Change_baud_command(int baud);
 int Erasing_data_command(int file_type);
 int stub_mem_finish(void);
 int stub_mem_begin(uint8_t type);

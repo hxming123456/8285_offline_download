@@ -69,7 +69,10 @@ void TIM2_IRQHandler(void)
 		}
 #endif
 
-		cnt_time++;
+		if(cnt_time < 400)
+		{
+			cnt_time++;
+		}
 		if(sync_flag)
 		{
 			sync_time++;
