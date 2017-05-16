@@ -11,7 +11,7 @@
 void iwdg_init()
 {
 	uint8_t pre = 4;
-	int rlr = 625;
+	int rlr = 1875;
 	RCC_LSICmd(ENABLE);
 
 	  /* Wait till LSI is ready */

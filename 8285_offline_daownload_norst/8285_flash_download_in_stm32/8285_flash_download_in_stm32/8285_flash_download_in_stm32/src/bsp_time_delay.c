@@ -7,6 +7,7 @@ int32_t sync_time = 0;
 int32_t nodata_time = 0;
 extern uint8_t sync_flag;
 extern uint8_t nodata_flag;
+extern uint8_t wait_baud_flag;
 
 void TIM2_Configuration(void)
 {
@@ -56,7 +57,7 @@ void TIM2_IRQHandler(void)
 		{
 			data_cnt = stm32rx.stock;
 		}
-		else if((stm32rx.stock>0) || sync_flag==1)
+		else if((stm32rx.stock>10) || sync_flag==1 || wait_baud_flag==1)
 		{
 			if(recv_time_out != 0)
 			{

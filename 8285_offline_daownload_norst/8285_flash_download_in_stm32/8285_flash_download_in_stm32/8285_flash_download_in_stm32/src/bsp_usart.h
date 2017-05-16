@@ -6,8 +6,7 @@
 #include "Data_pool.h"
 
 #define DATA_SEND_RECV_DABUG    'N'
-#define INFO_DABUG   			'Y'
-#define DEBUG_FLAG    			'Y'
+#define INFO_DEBUG   			'Y'
 
 void usart1_init();
 void usart1_write(uint8_t *data,uint32_t data_len);

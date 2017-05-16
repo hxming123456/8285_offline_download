@@ -84,7 +84,7 @@ void light_init(void)
 	GPIO_SetBits(GPIOB,GPIO_Pin_12);
 	GPIO_SetBits(GPIOB,GPIO_Pin_13);
 	GPIO_SetBits(GPIOB,GPIO_Pin_14);
-	GPIO_SetBits(GPIOB,GPIO_Pin_9);
+	//GPIO_ResetBits(GPIOB,GPIO_Pin_9);
 }
 
 int main(int argc, char* argv[])
@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 	usart1_init();
 	Debug_usart_init();
 	iwdg_init();
-	Debug_usart_write("reset\r\n",7,INFO_DABUG);
+	Debug_usart_write("reset\r\n",7,INFO_DEBUG);
 
 	initDataPool(&stm32rx);
 
@@ -112,22 +112,22 @@ int main(int argc, char* argv[])
 	res = f_mount(0,&fs);
 	if ( res == FR_OK )
 	{
-		//usart2_write("F_mou OK\r\n",10,INFO_DABUG);
+		//usart2_write("F_mou OK\r\n",10,INFO_DEBUG);
 	}
 	else
 	{
-		Debug_usart_write("F_mou NOK\r\n",11,INFO_DABUG);
+		Debug_usart_write("F_mou NOK\r\n",11,INFO_DEBUG);
 	}
 #if 0
 	res = f_open(&fnew, "0:data.csv",FA_READ|FA_WRITE);
 
 	if ( res == FR_OK )
 	{
-		Debug_usart_write("F_OPEN OK\r\n",11,INFO_DABUG);
+		Debug_usart_write("F_OPEN OK\r\n",11,INFO_DEBUG);
 	}
 	else if ( res == FR_EXIST )
 	{
-		Debug_usart_write("F_EXIST\r\n",9,INFO_DABUG);
+		Debug_usart_write("F_EXIST\r\n",9,INFO_DEBUG);
 	}
 	else
 	{
@@ -137,7 +137,7 @@ int main(int argc, char* argv[])
 	res = f_read(&fnew,buf,98,&num);
 	if ( res == FR_OK )
 	{
-		Debug_usart_write("F_READ OK\r\n",11,INFO_DABUG);
+		Debug_usart_write("F_READ OK\r\n",11,INFO_DEBUG);
 	}
 	else
 	{
@@ -149,13 +149,13 @@ int main(int argc, char* argv[])
 	res = f_lseek(&fnew,0*98);
 	if(res == FR_OK)
 	{
-		Debug_usart_write("change file point ok\r\n",22,INFO_DABUG);
+		Debug_usart_write("change file point ok\r\n",22,INFO_DEBUG);
 	}
 
 	res = f_write(&fnew,buf,98,&num);
 	if ( res == FR_OK )
 	{
-		Debug_usart_write("F_WRITE OK\r\n",11,INFO_DABUG);
+		Debug_usart_write("F_WRITE OK\r\n",11,INFO_DEBUG);
 	}
 	else
 	{
@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
 	res = f_read(&fnew,buf,46,&num);
 	if ( res == FR_OK )
 	{
-		//Debug_usart_write("F_READ OK\r\n",11,INFO_DABUG);
+		//Debug_usart_write("F_READ OK\r\n",11,INFO_DEBUG);
 	}
 	else
 	{

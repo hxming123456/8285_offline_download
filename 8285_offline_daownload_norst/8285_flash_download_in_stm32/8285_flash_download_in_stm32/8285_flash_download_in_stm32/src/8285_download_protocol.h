@@ -9,6 +9,10 @@
 #include ".//ff9//bsp_sdio_sdcard.h"
 
 extern uint8_t nodata_flag;
+extern int32_t recv_time_out;
+extern int32_t delay_time;
+extern uint8_t sync_flag;
+extern uint8_t wait_baud_flag;
 
 #define FIRMWARE_BIN 			0x00000000
 #define DATA_INFO				0x00078000
@@ -33,10 +37,6 @@ extern uint8_t nodata_flag;
 #define STUB_TEXT_UP_LEN        6168
 #define STUB_TEXT_DOWN_LEN		1528
 #define STUB_DATA_LEN           792
-
-extern int32_t recv_time_out;
-extern int32_t delay_time;
-extern uint8_t sync_flag;
 
 uint8_t  sign_sector_data[4095]= {0xFF};
 
@@ -516,5 +516,6 @@ int download_start(void);
 void wait_rxdata_available(int timeout);
 void change_datacsv_info(uint8_t *buf);
 void change_sign_info(void);
+void wait_baud_change(int timeout);
 
 #endif

@@ -168,15 +168,12 @@ void Debug_usart_write(void *data,uint32_t data_len,uint8_t debug_type)
 
 	uint32_t i = 0;
 
-	if(DEBUG_FLAG == 'Y')
+	if(debug_type == 'Y')
 	{
-		if(debug_type == 'Y')
+		for(i=0;i<data_len;i++)
 		{
-			for(i=0;i<data_len;i++)
-			{
-				USART_SendData(USART2,buf[i]);
-				while(USART_GetFlagStatus(USART2,USART_FLAG_TXE)==RESET);
-			}
+			USART_SendData(USART2,buf[i]);
+			while(USART_GetFlagStatus(USART2,USART_FLAG_TXE)==RESET);
 		}
 	}
 }

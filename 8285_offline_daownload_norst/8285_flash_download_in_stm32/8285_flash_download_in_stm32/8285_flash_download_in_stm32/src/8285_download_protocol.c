@@ -2,6 +2,7 @@
 
 uint8_t  origin_buf[16384] = {0};
 uint8_t sync_flag=0;
+uint8_t wait_baud_flag = 0;
 uint8_t nodata_flag = 0;
 
 void Data_formatt_write(uint8_t *packet,int packet_len,uint8_t packet_type)
@@ -179,11 +180,10 @@ void wait_rxdata_available(int timeout)
 {
 	recv_time_out = timeout;
 	//stm32rx.avail = 0;
-	Debug_usart_write("wait recv data...\r\n",19,INFO_DABUG);
+	Debug_usart_write("wait recv data...\r\n",19,INFO_DEBUG);
 #if 1
 	while(1)
 	{
-
 		if(stm32rx.avail == 1)
 		{
 			stm32rx.avail = 0;
@@ -191,6 +191,15 @@ void wait_rxdata_available(int timeout)
 		}
 	}
 #endif
+}
+
+void wait_baud_change(int timeout)
+{
+	wait_baud_flag = 1;
+
+	wait_rxdata_available(10);
+
+	wait_baud_flag = 0;
 }
 
 int device_sync(void)
@@ -213,7 +222,7 @@ int device_sync(void)
 	{
 		if(sync_recv_packet[i] != sync_recv_true[i])
 		{
-			Debug_usart_write("sync nok\r\n",10,INFO_DABUG);
+			Debug_usart_write("sync nok\r\n",10,INFO_DEBUG);
 			return 0;
 		}
 	}
@@ -244,7 +253,7 @@ int Change_baud_command(int baud)
 	{
 		if(change_recv[i] != change_true[i])
 		{
-			Debug_usart_write("change baud nok\r\n",10,INFO_DABUG);
+			Debug_usart_write("change baud nok\r\n",10,INFO_DEBUG);
 			return 0;
 		}
 	}
@@ -498,7 +507,7 @@ int send_data_command(int type,int data_len,uint8_t seq)
 	}
 
 
-	wait_rxdata_available(5);
+	wait_rxdata_available(10);
 	Data_formatt_read(flash_block_recv,20);
 
 	for(i=0;i<10;i++)
@@ -519,24 +528,24 @@ int download_sign_operate(int type)
 	ret = Erasing_data_command(type);
 	if(ret)
 	{
-		Debug_usart_write("eras_sign_ok\r\n",14,INFO_DABUG);
+		Debug_usart_write("eras_sign_ok\r\n",14,INFO_DEBUG);
 		change_sign_info();
 		ret = send_data_command(SIGN_INFO,4095,0);
 		iwdg_reload();
 		if(ret)
 		{
-			Debug_usart_write("send_sign_ok\r\n",14,INFO_DABUG);
+			Debug_usart_write("send_sign_ok\r\n",14,INFO_DEBUG);
 			return 1;
 		}
 		else
 		{
-			Debug_usart_write("send_sign_nok\r\n",15,INFO_DABUG);
+			Debug_usart_write("send_sign_nok\r\n",15,INFO_DEBUG);
 			return 0;
 		}
 	}
 	else
 	{
-		Debug_usart_write("eras_sign_nok\r\n",15,INFO_DABUG);
+		Debug_usart_write("eras_sign_nok\r\n",15,INFO_DEBUG);
 		return 0;
 	}
 }
@@ -560,7 +569,7 @@ int download_data_operate(int type)
 			{
 				while(1)
 				{
-					Debug_usart_write("csv read begin\r\n",16,INFO_DABUG);
+					Debug_usart_write("csv read begin\r\n",16,INFO_DEBUG);
 					ret = f_read(&fnew,data_buf,98,&num);
 					seq++;
 					if(ret == FR_OK)
@@ -568,17 +577,17 @@ int download_data_operate(int type)
 						if(num < 98)
 						{
 							f_close(&fnew);
-							Debug_usart_write("no csv data\r\n",13,INFO_DABUG);
+							Debug_usart_write("no csv data\r\n",13,INFO_DEBUG);
 							nodata_flag = 1;
 							return 0;
 						}
 						file_point += 98;
 						if(data_buf[0] == 'Y')
 						{
-							Debug_usart_write("csv read cnt:",13,INFO_DABUG);
+							Debug_usart_write("csv read cnt:",13,INFO_DEBUG);
 							hex_to_str(buf,seq);
-							Debug_usart_write(buf,2,INFO_DABUG);
-							Debug_usart_write("\r\n",2,INFO_DABUG);
+							Debug_usart_write(buf,2,INFO_DEBUG);
+							Debug_usart_write("\r\n",2,INFO_DEBUG);
 							change_datacsv_info(data_buf);
 							ret = send_data_command(DATA_INFO,4095,seq);
 							iwdg_reload();
@@ -586,7 +595,7 @@ int download_data_operate(int type)
 							if(!ret)
 							{
 								f_close(&fnew);
-								Debug_usart_write("send_csv error\r\n",16,INFO_DABUG);
+								Debug_usart_write("send_csv error\r\n",16,INFO_DEBUG);
 								return ret;
 							}
 							else
@@ -595,27 +604,27 @@ int download_data_operate(int type)
 								ret = f_lseek(&fnew,file_point-98);
 								if(ret == FR_OK)
 								{
-									Debug_usart_write("change file point ok\r\n",22,INFO_DABUG);
+									Debug_usart_write("change file point ok\r\n",22,INFO_DEBUG);
 									ret = f_write(&fnew,data_buf,98,&num);
 									if ( ret == FR_OK )
 									{
 										f_close(&fnew);
-										Debug_usart_write("change file ok\r\n",16,INFO_DABUG);
-										Debug_usart_write("send_csv ok\r\n",16,INFO_DABUG);
+										Debug_usart_write("change file ok\r\n",16,INFO_DEBUG);
+										Debug_usart_write("send_csv ok\r\n",16,INFO_DEBUG);
 										return 1;
 									}
 									else
 									{
 										f_close(&fnew);
-										Debug_usart_write("change file nok\r\n",17,INFO_DABUG);
-										Debug_usart_write("send_csv error\r\n",16,INFO_DABUG);
+										Debug_usart_write("change file nok\r\n",17,INFO_DEBUG);
+										Debug_usart_write("send_csv error\r\n",16,INFO_DEBUG);
 										return 0;
 									}
 								}
 								else
 								{
 									f_close(&fnew);
-									Debug_usart_write("change file point nok\r\n",22,INFO_DABUG);
+									Debug_usart_write("change file point nok\r\n",22,INFO_DEBUG);
 									return 0;
 								}
 							}
@@ -625,7 +634,7 @@ int download_data_operate(int type)
 					else
 					{
 						f_close(&fnew);
-						Debug_usart_write("csv_read nok\r\n",14,INFO_DABUG);
+						Debug_usart_write("csv_read nok\r\n",14,INFO_DEBUG);
 						return 0;
 					}
 				}
@@ -634,14 +643,14 @@ int download_data_operate(int type)
 			else
 			{
 				f_close(&fnew);
-				Debug_usart_write("csv_noopen\r\n",12,INFO_DABUG);
+				Debug_usart_write("csv_noopen\r\n",12,INFO_DEBUG);
 				return 0;
 			}
 	#endif
 		}
 		else
 		{
-			Debug_usart_write("eras_csv_nok\r\n",14,INFO_DABUG);
+			Debug_usart_write("eras_csv_nok\r\n",14,INFO_DEBUG);
 			return 0;
 		}
 }
@@ -658,24 +667,24 @@ int download_bin_operate(int type)
 	ret = Erasing_data_command(type);
 	if(ret)
 	{
-		Debug_usart_write("bin eras ok\r\n",13,INFO_DABUG);
+		Debug_usart_write("bin eras ok\r\n",13,INFO_DEBUG);
 		ret = f_open(&fnew,(uint8_t*)"0:FWSW-0185-1.6.1-noflashcipher.bin",FA_READ);
 #if 1
 		if(ret == FR_OK)
 		{
 			while(1)
 			{
-				Debug_usart_write("bin read begin\r\n",17,INFO_DABUG);
+				Debug_usart_write("bin read begin\r\n",17,INFO_DEBUG);
 				ret = f_read(&fnew,origin_buf,16384,&num);
-				Debug_usart_write("bin read cnt:",13,INFO_DABUG);
+				Debug_usart_write("bin read cnt:",13,INFO_DEBUG);
 				hex_to_str(buf,seq);
-				Debug_usart_write(buf,2,INFO_DABUG);
-				Debug_usart_write("\r\n",2,INFO_DABUG);
+				Debug_usart_write(buf,2,INFO_DEBUG);
+				Debug_usart_write("\r\n",2,INFO_DEBUG);
 				if(ret == FR_OK)
 				{
 					if(num==0)
 					{
-						Debug_usart_write("send_bin_ok\r\n",13,INFO_DABUG);
+						Debug_usart_write("send_bin_ok\r\n",13,INFO_DEBUG);
 						f_close(&fnew);
 						return 1;
 					}
@@ -686,14 +695,14 @@ int download_bin_operate(int type)
 					if(!ret)
 					{
 						f_close(&fnew);
-						Debug_usart_write("send_bin error\r\n",16,INFO_DABUG);
+						Debug_usart_write("send_bin error\r\n",16,INFO_DEBUG);
 						return 0;
 					}
 				}
 				else
 				{
 					f_close(&fnew);
-					Debug_usart_write("bin_read nok\r\n",14,INFO_DABUG);
+					Debug_usart_write("bin_read nok\r\n",14,INFO_DEBUG);
 					return 0;
 				}
 			}
@@ -701,14 +710,14 @@ int download_bin_operate(int type)
 		}
 		else
 		{
-			Debug_usart_write("bin_noopen\r\n",12,INFO_DABUG);
+			Debug_usart_write("bin_noopen\r\n",12,INFO_DEBUG);
 			return 0;
 		}
 #endif
 	}
 	else
 	{
-		Debug_usart_write("eras_bin_nok\r\n",14,INFO_DABUG);
+		Debug_usart_write("eras_bin_nok\r\n",14,INFO_DEBUG);
 		return 0;
 	}
 }
@@ -803,7 +812,7 @@ int download_start(void)
 
 	//update_light_status(DOWNLOAD_NOW_STATUS);
 	//change_datacsv_info("Y 10000d85e1 b58f5ee9-09d6-42c7-99be-4afb9c2b30b8 d0:27:00:1b:09:12 d0:27:00:1b:09:13 PSF-A01-GL");
-	//Debug_usart_write(&ret,1,INFO_DABUG);
+	//Debug_usart_write(&ret,1,INFO_DEBUG);
 	//return 1;
 	if(nodata_flag)
 	{
@@ -820,7 +829,7 @@ int download_start(void)
 	{
 		sync_flag = 0;
 		update_light_status(DOWNLOAD_NOW_STATUS);
-		Debug_usart_write("sync_ok\r\n",9,INFO_DABUG);
+		Debug_usart_write("sync_ok\r\n",9,INFO_DEBUG);
 		ret = run_stub();
 		iwdg_reload();
 	}
@@ -831,7 +840,7 @@ int download_start(void)
 
 	if(ret)
 	{
-		Debug_usart_write("stub_ok\r\n",9,INFO_DABUG);
+		Debug_usart_write("stub_ok\r\n",9,INFO_DEBUG);
 		//ret = Change_baud_command(923076);
 		ret = Change_baud_command(1500000);
 		iwdg_reload();
@@ -839,7 +848,8 @@ int download_start(void)
 
 	if(ret)
 	{
-		Debug_usart_write("change_baud_ok\r\n",16,INFO_DABUG);
+		wait_baud_change(10);
+		Debug_usart_write("change_baud_ok\r\n",16,INFO_DEBUG);
 		ret = download_data_command(FIRMWARE_BIN);
 		if(ret)
 		{
