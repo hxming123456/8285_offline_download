@@ -284,14 +284,16 @@ int Erasing_data_command(int file_type)
 			eras_command[17] = 0x04;
 			break;
 		case DATA_INFO:
-			eras_command[9] =  0x20;
+			//eras_command[9] =  0x20;
+			eras_command[9] =  0x01;
 			eras_command[12] = 0x10;
 			eras_command[17] = 0x04;
 			eras_command[21] = 0x80;
 			eras_command[22] = 0x07;
 			break;
 		case SIGN_INFO:
-			eras_command[9] =  0x20;
+			//eras_command[9] =  0x20;
+			eras_command[9] =  0x01;
 			eras_command[12] = 0x10;
 			eras_command[17] = 0x04;
 			eras_command[21] = 0xa0;
@@ -478,6 +480,7 @@ int send_data_command(int type,int data_len,uint8_t seq)
 	uint8_t flash_block_recv[20] = {0};
 	uint8_t flash_block_true[10] = {0x01,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 
+#if 0
 	if((data_len < 0x4000) && (data_len > 0x1000))
 	{
 		send_data[3] = 0x30;
@@ -491,6 +494,11 @@ int send_data_command(int type,int data_len,uint8_t seq)
 		send_data[8] = 0xff;
 		send_data[9] = 0x0f;
 	}
+#endif
+	send_data[2] = (data_len+16)&0xFF;
+	send_data[3] = ((data_len+16)>>8)&0xFF;
+	send_data[8] = data_len&0xFF;
+	send_data[9] = (data_len>>8)&0xFF;
 
 	send_data[12] = seq;
 	send_data[4] = checksum(type,data_len);
@@ -697,10 +705,6 @@ int download_bin_operate(int type)
 						Debug_usart_write("send_bin_ok\r\n",13,INFO_DEBUG);
 						f_close(&fnew);
 						return 1;
-					}
-					if(num < 4095 && num > 0)
-					{
-						num = 4095;
 					}
 					iwdg_reload();
 					ret = send_data_command(FIRMWARE_BIN,num,seq);
