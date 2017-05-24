@@ -72,27 +72,34 @@ void system_clk_init(void)
     }
 }
 
-void light_init(void)
+void light_pin_init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
 
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);
 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_14;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13 | GPIO_Pin_14 | GPIO_Pin_15;//ok nok now
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	GPIO_SetBits(GPIOB,GPIO_Pin_13);
 	GPIO_ResetBits(GPIOB,GPIO_Pin_14);
 }
 
-void input_init()
+void is_download_pin_init(void)
+{
+	GPIO_InitTypeDef GPIO_InitStructure;
+
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);
+
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+}
+
+void rst_pin_init()
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -104,6 +111,18 @@ void input_init()
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	GPIO_SetBits(GPIOB,GPIO_Pin_9);
+}
+
+void isdata_pin_init()
+{
+	GPIO_InitTypeDef GPIO_InitStructure;
+
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
+
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 
 void SD_test()
@@ -183,8 +202,11 @@ int main(int argc, char* argv[])
 
 	system_clk_init();
 
-	light_init();
-	input_init();
+	light_pin_init();
+	rst_pin_init();
+	isdata_pin_init();
+	is_download_pin_init();
+
 	tim_init();
 	usart1_init();
 	Debug_usart_init();
@@ -225,7 +247,8 @@ int main(int argc, char* argv[])
 			}
 			else if(flag == 1)
 			{
-				ret = download_start();
+				ret = download_start(0);
+				//ret = download_start(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_6));
 				if(ret != 0)
 				{
 					flag = 0;
@@ -235,7 +258,6 @@ int main(int argc, char* argv[])
 			{
 				;
 			}
-				    //
 			cnt_time = 0;
 
 		}

@@ -189,6 +189,7 @@ void wait_rxdata_available(int timeout)
 		if(stm32rx.avail == 1)
 		{
 			stm32rx.avail = 0;
+			Debug_usart_write("wait recv out\r\n",15,INFO_DEBUG);
 			break;
 		}
 	}
@@ -215,7 +216,7 @@ int device_sync(void)
 	uint8_t i;
 
 	Data_formatt_write(sync_send_packet,44,HA_HEAD_HA_TAIL);
-	wait_rxdata_available(50);
+	wait_rxdata_available(10);
 	Data_formatt_read(sync_recv_packet,20);
 
 	for(i=0;i<10;i++)
@@ -237,7 +238,7 @@ int Change_baud_command(int baud)
 	//	0xc0,0xc6,0x2d,0x00,0x00,0x00,0x00,0x00};
 	uint8_t change_command[16] = {
 			0x00,0x0f,0x08,0x00,0x00,0x00,0x00,0x00,
-			0xc4,0x15,0x0e,0x00,0x00,0x00,0x00,0x00};
+			0x60,0xe3,0x16,0x00,0x00,0x00,0x00,0x00};
 
 	uint8_t change_recv[20] = {0};
 	uint8_t change_true[10] = {0x01,0x0f,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
@@ -589,6 +590,9 @@ int download_data_operate(int type)
 							hex_to_str(buf,seq);
 							Debug_usart_write(buf,2,INFO_DEBUG);
 							Debug_usart_write("\r\n",2,INFO_DEBUG);
+							Debug_usart_write("data:",5,INFO_DEBUG);
+							Debug_usart_write(&data_buf[2],10,INFO_DEBUG);
+							Debug_usart_write("\r\n",2,INFO_DEBUG);
 							change_datacsv_info(data_buf);
 							ret = send_data_command(DATA_INFO,4095,seq);
 							iwdg_reload();
@@ -606,6 +610,7 @@ int download_data_operate(int type)
 								{
 									Debug_usart_write("change file point ok\r\n",22,INFO_DEBUG);
 									ret = f_write(&fnew,data_buf,98,&num);
+									//ret = f_write(&fnew,"Y 10000258cc 47a29b06-a0f1-42ba-a704-14c41080afa7 d0:27:00:04:ae:e8 d0:27:00:04:ae:e9 PSF-A01-GL",98,&num);
 									if ( ret == FR_OK )
 									{
 										f_close(&fnew);
@@ -668,7 +673,8 @@ int download_bin_operate(int type)
 	if(ret)
 	{
 		Debug_usart_write("bin eras ok\r\n",13,INFO_DEBUG);
-		ret = f_open(&fnew,(uint8_t*)"0:FWSW-0185-1.6.1-noflashcipher.bin",FA_READ);
+		ret = f_open(&fnew,(uint8_t*)"0:FWSW-0185-SWITCH-8285-1.6.2.bin",FA_READ);
+		Debug_usart_write("bin:FWSW-0185-SWITCH-8285-1.6.2.bin\r\n",37,INFO_DEBUG);
 #if 1
 		if(ret == FR_OK)
 		{
@@ -687,6 +693,10 @@ int download_bin_operate(int type)
 						Debug_usart_write("send_bin_ok\r\n",13,INFO_DEBUG);
 						f_close(&fnew);
 						return 1;
+					}
+					if(num < 4095 && num > 0)
+					{
+						num = 4095;
 					}
 					iwdg_reload();
 					ret = send_data_command(FIRMWARE_BIN,num,seq);
@@ -813,7 +823,7 @@ int rst_8266(void)
 	return 1;
 }
 
-int download_start(void)
+int download_start(uint8_t isdata_flag)
 {
 	uint8_t ret = 1;
 
@@ -835,24 +845,29 @@ int download_start(void)
 	usart1_change_baud(115200);
 	iwdg_reload();
 
-
+	sync_flag = 1;
 	ret = device_sync();
-#if 0
+#if 1
 	if(!ret)
 	{
-		if(sync_error_cnt == 2)
-		{
-			sync_error_cnt = 0;
-			ret=0;
-		}
-		else
+		ret = device_sync();
+		if(!ret)
 		{
 			sync_error_cnt++;
-			return 0;
+			if(sync_error_cnt==3)
+			{
+				sync_error_cnt = 0;
+				ret = 0;
+			}
+			else
+			{
+				return 0;
+			}
 		}
 	}
 #endif
-#if 1
+
+#if 0
 	for(sync_error_cnt = 0; sync_error_cnt < 3; sync_error_cnt++)
 		{
 			ret = device_sync();
@@ -872,6 +887,7 @@ int download_start(void)
 
 	if(ret)
 	{
+		sync_flag = 0;
 		Debug_usart_write("sync_ok\r\n",9,INFO_DEBUG);
 		ret = run_stub();
 		iwdg_reload();
@@ -884,7 +900,7 @@ int download_start(void)
 	if(ret)
 	{
 		Debug_usart_write("stub_ok\r\n",9,INFO_DEBUG);
-		ret = Change_baud_command(923076);
+		ret = Change_baud_command(1500000);//923076
 		iwdg_reload();
 	}
 
@@ -895,22 +911,43 @@ int download_start(void)
 		ret = download_data_command(FIRMWARE_BIN);
 		if(ret)
 		{
-			iwdg_reload();
-			ret = download_data_command(SIGN_INFO);
-			if(ret)
+			//if(1)
+			if(isdata_flag==0)
 			{
 				iwdg_reload();
-				ret = download_data_command(DATA_INFO);
+				ret = download_data_command(SIGN_INFO);
 				if(ret)
 				{
 					iwdg_reload();
-					update_light_status(DOWNLOAD_OK_STATUS);
-					return DOWNLOAD_OK;
+					ret = download_data_command(DATA_INFO);
+					if(ret)
+					{
+						iwdg_reload();
+						update_light_status(DOWNLOAD_OK_STATUS);
+						return DOWNLOAD_OK;
+					}
+					else
+					{
+						if(nodata_flag)
+						{
+							update_light_status(NO_DATA_STATUS);
+							sync_flag = 0;
+							return NO_DATA;
+						}
+					}
 				}
+			}
+			else
+			{
+				iwdg_reload();
+				update_light_status(DOWNLOAD_OK_STATUS);
+				sync_flag = 0;
+				return DOWNLOAD_OK;
 			}
 		}
 	}
 
+	sync_flag = 0;
 	update_light_status(DOWNLOAD_NOK_STATUS);
 	return DOWNLOAD_NOK;
 }

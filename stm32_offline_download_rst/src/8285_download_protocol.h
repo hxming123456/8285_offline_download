@@ -59,7 +59,7 @@ int run_stub(void);
 uint8_t checksum(int type,int data_len);
 int send_data_command(int type,int data_len,uint8_t seq);
 int Data_formatt_write_modify(int packet_len,uint8_t packet_type,uint8_t cnt);
-int download_start(void);
+int download_start(uint8_t isdata_flag);
 void wait_rxdata_available(int timeout);
 void change_datacsv_info(uint8_t *buf);
 void change_sign_info(void);

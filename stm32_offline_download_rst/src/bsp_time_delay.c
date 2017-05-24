@@ -60,13 +60,14 @@ void TIM2_IRQHandler(void)
 		{
 			data_cnt = stm32rx.stock;
 		}
-		else if((stm32rx.stock>8) || wait_baud_flag==1)
+		else if((stm32rx.stock>8) || wait_baud_flag==1 || sync_flag == 1)
 		{
 			if(recv_time_out != 0)
 			{
 				recv_time_out--;
 				if(recv_time_out==0)
 				{
+					Debug_usart_write("rx.avail set\r\n",14,INFO_DEBUG);
 					stm32rx.avail = 1;
 				}
 			}
@@ -89,16 +90,20 @@ void change_light_status(uint8_t status)
 		case DOWNLOAD_OK_STATUS:
 			GPIO_ResetBits(GPIOB,GPIO_Pin_13);
 			GPIO_SetBits(GPIOB,GPIO_Pin_14);
+			GPIO_SetBits(GPIOB,GPIO_Pin_15);
 			break;
 		case DOWNLOAD_NOK_STATUS:
 			GPIO_ResetBits(GPIOB,GPIO_Pin_14);
 			GPIO_SetBits(GPIOB,GPIO_Pin_13);
+			GPIO_SetBits(GPIOB,GPIO_Pin_15);
 			break;
 		case DOWNLOAD_NOW_STATUS:
 			GPIO_SetBits(GPIOB,GPIO_Pin_14);
 			GPIO_SetBits(GPIOB,GPIO_Pin_13);
+			GPIO_ResetBits(GPIOB,GPIO_Pin_15);
 			break;
 		case NO_DATA_STATUS:
+			GPIO_SetBits(GPIOB,GPIO_Pin_15);
 			if(nodata_flag)
 			{
 				nodata_time++;
