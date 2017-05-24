@@ -67,7 +67,6 @@ void TIM2_IRQHandler(void)
 				recv_time_out--;
 				if(recv_time_out==0)
 				{
-					Debug_usart_write("rx.avail set\r\n",14,INFO_DEBUG);
 					stm32rx.avail = 1;
 				}
 			}

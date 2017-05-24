@@ -244,6 +244,10 @@ int Change_baud_command(int baud)
 	uint8_t change_true[10] = {0x01,0x0f,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 	uint8_t i = 0;
 
+	change_command[8] = (baud)&0xFF;
+	change_command[9] = (baud>>8)&0xFF;
+	change_command[10] = (baud>>16)&0xFF;
+
 	Data_formatt_write(change_command,16,HA_HEAD_HA_TAIL);
 	wait_rxdata_available(10);
 	Data_formatt_read(change_recv,20);
@@ -823,7 +827,7 @@ int rst_8266(void)
 	return 1;
 }
 
-int download_start(uint8_t isdata_flag)
+int download_start(int baud,uint8_t isdata_flag)
 {
 	uint8_t ret = 1;
 
@@ -900,7 +904,7 @@ int download_start(uint8_t isdata_flag)
 	if(ret)
 	{
 		Debug_usart_write("stub_ok\r\n",9,INFO_DEBUG);
-		ret = Change_baud_command(1500000);//923076
+		ret = Change_baud_command(baud);//923076
 		iwdg_reload();
 	}
 

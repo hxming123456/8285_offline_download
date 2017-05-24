@@ -247,8 +247,8 @@ int main(int argc, char* argv[])
 			}
 			else if(flag == 1)
 			{
-				ret = download_start(0);
-				//ret = download_start(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_6));
+				ret = download_start(1200000,0);
+				//ret = download_start(1200000,GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_6));
 				if(ret != 0)
 				{
 					flag = 0;
