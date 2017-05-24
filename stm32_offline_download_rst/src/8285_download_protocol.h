@@ -46,6 +46,8 @@ extern uint8_t update_status;
 #define DOWNLOAD_NOK			2
 #define NO_DATA					3
 
+#define SDCRAD_LOG				'Y'
+
 
 void Data_formatt_write(uint8_t *packet,int packet_len,uint8_t packet_type);
 int Data_formatt_read(uint8_t *packet,int len);
@@ -65,5 +67,6 @@ void change_datacsv_info(uint8_t *buf);
 void change_sign_info(void);
 void wait_baud_change(int timeout);
 int rst_8266(void);
+int SDcard_log_write(uint8_t *buf,int32_t len,uint8_t islog_flag);
 
 #endif

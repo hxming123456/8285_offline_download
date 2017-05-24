@@ -581,9 +581,9 @@ int download_data_operate(int type)
 	#if 1
 			if(ret == FR_OK)
 			{
+				Debug_usart_write("csv read begin\r\n",16,INFO_DEBUG);
 				while(1)
 				{
-					Debug_usart_write("csv read begin\r\n",16,INFO_DEBUG);
 					ret = f_read(&fnew,data_buf,98,&num);
 					seq++;
 					if(ret == FR_OK)
@@ -606,6 +606,7 @@ int download_data_operate(int type)
 							Debug_usart_write(&data_buf[2],10,INFO_DEBUG);
 							Debug_usart_write("\r\n",2,INFO_DEBUG);
 							change_datacsv_info(data_buf);
+							//change_datacsv_info("Y 10000258cc 47a29b06-a0f1-42ba-a704-14c41080afa7 d0:27:00:04:ae:e8 d0:27:00:04:ae:e9 PSF-A01-GL");
 							ret = send_data_command(DATA_INFO,4095,seq);
 							iwdg_reload();
 							if(!ret)
@@ -622,10 +623,12 @@ int download_data_operate(int type)
 								{
 									Debug_usart_write("change file point ok\r\n",22,INFO_DEBUG);
 									ret = f_write(&fnew,data_buf,98,&num);
-									//ret = f_write(&fnew,"Y 10000258cc 47a29b06-a0f1-42ba-a704-14c41080afa7 d0:27:00:04:ae:e8 d0:27:00:04:ae:e9 PSF-A01-GL",98,&num);
 									if ( ret == FR_OK )
 									{
 										f_close(&fnew);
+										SDcard_log_write((uint8_t*)"data:",5,SDCRAD_LOG);
+										SDcard_log_write(&data_buf[2],10,SDCRAD_LOG);
+										SDcard_log_write("\r\n",2,SDCRAD_LOG);
 										Debug_usart_write("change file ok\r\n",16,INFO_DEBUG);
 										Debug_usart_write("send_csv ok\r\n",16,INFO_DEBUG);
 										return 1;
@@ -801,6 +804,68 @@ int download_data_command(int type)
 	return ret;
 }
 
+int SDcard_log_write(uint8_t *buf,int32_t len,uint8_t islog_flag)
+{
+	int ret = 0;
+	int num = 0;
+	int32_t point=0;
+	//uint8_t str[4] = {"1234"};
+	FIL fnew_log;
+	FIL fnew_cnf;
+
+	if(islog_flag!='Y')
+	{
+		return 0;
+	}
+
+	ret = f_open(&fnew_cnf,"0:config.txt",FA_READ|FA_WRITE);
+	if(ret==FR_OK)
+	{
+		ret = f_lseek(&fnew_cnf,0);
+		ret = f_read(&fnew_cnf,&point,4,&num);
+		if(ret==FR_OK)
+		{
+			ret = f_open(&fnew_log,"0:log.txt",FA_READ|FA_WRITE);
+			if(ret == FR_OK)
+			{
+				ret = f_lseek(&fnew_log,point);
+				if(ret == FR_OK)
+				{
+					ret = f_write(&fnew_log,buf,len,&num);
+					if(ret == FR_OK)
+					{
+						point += len;
+						ret = f_lseek(&fnew_cnf,0);
+						ret = f_write(&fnew_cnf,&point,4,&num);
+						if(ret==FR_OK)
+						{
+							Debug_usart_write("SDcard log write succeed\r\n",26,INFO_DEBUG);
+							f_close(&fnew_log);
+							f_close(&fnew_cnf);
+						}
+					}
+				}
+				else
+				{
+					f_close(&fnew_log);
+					f_close(&fnew_cnf);
+				}
+			}
+			else
+			{
+				f_close(&fnew_log);
+				f_close(&fnew_cnf);
+			}
+		}
+	}
+	else
+	{
+		f_close(&fnew_cnf);
+	}
+
+	return 1;
+}
+
 void update_light_status(uint8_t status)
 {
 	update_status = status;
@@ -849,6 +914,11 @@ int download_start(int baud,uint8_t isdata_flag)
 		return 0;
 	}
 #endif
+
+	if(sync_error_cnt==0)
+	{
+		SDcard_log_write((uint8_t*)"download start\r\n",16,SDCRAD_LOG);
+	}
 
 	usart1_change_baud(115200);
 	iwdg_reload();
@@ -908,7 +978,7 @@ int download_start(int baud,uint8_t isdata_flag)
 	if(ret)
 	{
 		Debug_usart_write("stub_ok\r\n",9,INFO_DEBUG);
-		ret = Change_baud_command(baud);//923076
+		ret = Change_baud_command(baud);
 		iwdg_reload();
 	}
 

@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
 	usart1_init();
 	Debug_usart_init();
 	iwdg_init();
-	Debug_usart_write("reset\r\n",7,INFO_DEBUG);
+
 
 	initDataPool(&stm32rx);
 
@@ -228,6 +228,9 @@ int main(int argc, char* argv[])
 	{
 		Debug_usart_write("F_mou NOK\r\n",11,INFO_DEBUG);
 	}
+
+	Debug_usart_write("reset\r\n",7,INFO_DEBUG);
+	SDcard_log_write((uint8_t*)"software reset\r\n",16,SDCRAD_LOG);
 
 	while(1)
 	{
@@ -249,11 +252,23 @@ int main(int argc, char* argv[])
 			}
 			else if(flag == 1)
 			{
-				ret = download_start(1500000,0);
+				ret = download_start(1200000,0);
 				//ret = download_start(1200000,ISDATA_PIN_READ);
 				if(ret != 0)
 				{
 					flag = 0;
+					if(ret==1)
+					{
+						SDcard_log_write((uint8_t*)"download ok\r\n\r\n",15,SDCRAD_LOG);
+					}
+					else if(ret==2)
+					{
+						SDcard_log_write((uint8_t*)"download nok\r\n\r\n",16,SDCRAD_LOG);
+					}
+					else if(ret==3)
+					{
+						SDcard_log_write((uint8_t*)"download nodata\r\n\r\n",19,SDCRAD_LOG);
+					}
 				}
 			}
 			else
