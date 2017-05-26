@@ -85,8 +85,9 @@ void light_pin_init(void)
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-	GPIO_SetBits(GPIOB,GPIO_Pin_13);
-	GPIO_ResetBits(GPIOB,GPIO_Pin_14);
+	GPIO_ResetBits(GPIOB,GPIO_Pin_13);
+	GPIO_SetBits(GPIOB,GPIO_Pin_14);
+	GPIO_SetBits(GPIOB,GPIO_Pin_15);
 }
 
 void is_download_pin_init(void)

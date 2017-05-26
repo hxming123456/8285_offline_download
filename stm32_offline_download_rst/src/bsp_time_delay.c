@@ -87,13 +87,13 @@ void change_light_status(uint8_t status)
 	switch(status)
 	{
 		case DOWNLOAD_OK_STATUS:
-			GPIO_ResetBits(GPIOB,GPIO_Pin_13);
-			GPIO_SetBits(GPIOB,GPIO_Pin_14);
+			GPIO_SetBits(GPIOB,GPIO_Pin_13);
+			GPIO_ResetBits(GPIOB,GPIO_Pin_14);
 			GPIO_SetBits(GPIOB,GPIO_Pin_15);
 			break;
 		case DOWNLOAD_NOK_STATUS:
-			GPIO_ResetBits(GPIOB,GPIO_Pin_14);
-			GPIO_SetBits(GPIOB,GPIO_Pin_13);
+			GPIO_SetBits(GPIOB,GPIO_Pin_14);
+			GPIO_ResetBits(GPIOB,GPIO_Pin_13);
 			GPIO_SetBits(GPIOB,GPIO_Pin_15);
 			break;
 		case DOWNLOAD_NOW_STATUS:
@@ -105,12 +105,8 @@ void change_light_status(uint8_t status)
 			GPIO_SetBits(GPIOB,GPIO_Pin_15);
 			if(nodata_flag)
 			{
-				nodata_time++;
-				if(nodata_time >= 200)
-				{
-					nodata_time = 0;
-					GPIOB->ODR ^= GPIO_Pin_14;
-				}
+				GPIO_ResetBits(GPIOB,GPIO_Pin_13);
+				GPIO_ResetBits(GPIOB,GPIO_Pin_14);
 			}
 			break;
 		default:break;

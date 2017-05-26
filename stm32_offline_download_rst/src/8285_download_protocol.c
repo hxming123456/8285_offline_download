@@ -900,11 +900,6 @@ int download_start(int baud,uint8_t isdata_flag)
 {
 	uint8_t ret = 1;
 
-	if(nodata_flag)
-	{
-		return NO_DATA;
-	}
-
 	update_light_status(DOWNLOAD_NOW_STATUS);
 
 #if 1
