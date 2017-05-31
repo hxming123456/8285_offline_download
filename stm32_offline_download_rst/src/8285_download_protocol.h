@@ -11,11 +11,14 @@
 #include "bsp_iwdg.h"
 
 extern uint8_t nodata_flag;
-extern int32_t recv_time_out;
+extern uint32_t recv_time_out;
 extern int32_t delay_time;
 extern uint8_t sync_flag;
 extern uint8_t wait_baud_flag;
 extern uint8_t update_status;
+extern uint8_t all_time_flag;
+extern uint32_t send_time;
+extern uint8_t recv_over_flag;
 
 #define FIRMWARE_BIN 			0x00000000
 #define DATA_INFO				0x00078000

@@ -235,12 +235,13 @@ int main(int argc, char* argv[])
 
 	while(1)
 	{
-		if(cnt_time>=400)
+		if(cnt_time>=80)
 		{
 			iwdg_reload();
 			//Debug_usart_write(&flag,1,INFO_DEBUG);
 			if(flag == 0)
 			{
+				//if(1)
 				if(GPIO_ReadInputDataBit(GPIOB,GPIO_Pin_12)==0)
 				{
 					start_count++;
@@ -253,7 +254,8 @@ int main(int argc, char* argv[])
 			}
 			else if(flag == 1)
 			{
-				ret = download_start(1200000,0);
+				ret = download_start(2250000,0);
+				Debug_usart_write("baud:2250000\r\n",14,INFO_DEBUG);
 				//ret = download_start(1200000,ISDATA_PIN_READ);
 				if(ret != 0)
 				{

@@ -8,6 +8,8 @@
 #define DATA_SEND_RECV_DABUG    'N'
 #define INFO_DEBUG   			'Y'
 
+extern uint32_t usart_send_timeout;
+
 void usart1_init();
 void usart1_write(uint8_t *data,uint32_t data_len);
 int usart1_read(uint8_t *data);

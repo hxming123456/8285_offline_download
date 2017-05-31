@@ -1,5 +1,7 @@
 #include "bsp_usart.h"
 
+uint32_t usart_send_timeout = 0;
+
 void usart1_init()
 {
 	USART_InitTypeDef USART_InitStructure;
@@ -73,11 +75,22 @@ void usart1_nvic_init(void)
 
 void usart1_write(uint8_t *data,uint32_t data_len)
 {
+	uint8_t * buf = (uint8_t *)data;
+
 	uint32_t i = 0;
+
 	for(i=0;i<data_len;i++)
 	{
-		USART_SendData(USART1,data[i]);
-		while(USART_GetFlagStatus(USART1,USART_FLAG_TXE)==RESET);
+		usart_send_timeout = 10;
+		USART_SendData(USART1,buf[i]);
+		while(1)
+		{
+			if((usart_send_timeout==0)||(USART_GetFlagStatus(USART1,USART_FLAG_TXE)!=RESET))
+			{
+				usart_send_timeout = 0;
+				break;
+			}
+		}
 	}
 }
 
@@ -117,7 +130,7 @@ void Debug_usart_init()
 
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2,ENABLE);
 
-	USART_InitStructure.USART_BaudRate = 19200;
+	USART_InitStructure.USART_BaudRate = 230400;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
 	USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -172,8 +185,22 @@ void Debug_usart_write(void *data,uint32_t data_len,uint8_t debug_type)
 	{
 		for(i=0;i<data_len;i++)
 		{
+			usart_send_timeout = 0;
 			USART_SendData(USART2,buf[i]);
-			while(USART_GetFlagStatus(USART2,USART_FLAG_TXE)==RESET);
+			while(1)
+			{
+				if(USART_GetFlagStatus(USART2,USART_FLAG_TXE)!=RESET)
+				{
+					break;
+				}
+				else
+				{
+					if(usart_send_timeout>10)
+					{
+						break;
+					}
+				}
+			}
 		}
 	}
 }

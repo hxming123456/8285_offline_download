@@ -1,16 +1,20 @@
 #include "bsp_time_delay.h"
 
 int32_t cnt_time=0;
-int32_t recv_time_out = 0;
+uint32_t recv_time_out = 0;
 int32_t data_cnt = 0;
 int32_t sync_time = 0;
 int32_t nodata_time = 0;
 
 extern uint8_t nodata_flag;
 extern uint8_t update_status;
-extern int32_t recv_time_out;
+extern uint32_t recv_time_out;
 extern int32_t cnt_time;
 extern uint8_t wait_baud_flag;
+extern uint32_t usart_send_timeout;
+extern uint8_t all_time_flag;
+extern uint32_t send_time;
+extern uint8_t recv_over_flag;
 
 void TIM2_Configuration(void)
 {
@@ -18,7 +22,7 @@ void TIM2_Configuration(void)
 
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2,ENABLE);
 
-	TIM_TimeBaseStructure.TIM_Period = 1000;
+	TIM_TimeBaseStructure.TIM_Period = 5000;
 
 	TIM_TimeBaseStructure.TIM_Prescaler = 71;
 
@@ -51,31 +55,41 @@ void TIM2_NVIC_Configuration(void)
 
 void TIM2_IRQHandler(void)
 {
-
-
 	if ( TIM_GetITStatus(TIM2 , TIM_IT_Update) != RESET )
 	{
 #if 1
-		if((stm32rx.stock>=0) && (stm32rx.stock!=data_cnt))
+		if(recv_time_out != 0)
 		{
-			data_cnt = stm32rx.stock;
-		}
-		else if((stm32rx.stock>8) || wait_baud_flag==1 || sync_flag == 1)
-		{
-			if(recv_time_out != 0)
+			if(stm32rx.stock>=8 || wait_baud_flag==1 || sync_flag == 1)
 			{
 				recv_time_out--;
 				if(recv_time_out==0)
 				{
-					stm32rx.avail = 1;
+					recv_over_flag = 1;
+					Debug_usart_write("out 1\r\n",7,INFO_DEBUG);
 				}
+			}
+		}
+
+#else
+		if(all_time_flag==0)
+		{
+			send_time++;
+			if(send_time>=200)
+			{
+				all_time_flag = 1;
+				Debug_usart_write("out 200ms\r\n",10,INFO_DEBUG);
 			}
 		}
 #endif
 		change_light_status(update_status);
-		if(cnt_time < 400)
+		if(cnt_time < 80)
 		{
 			cnt_time++;
+		}
+		if(usart_send_timeout > 0)
+		{
+			usart_send_timeout--;
 		}
 		TIM_ClearITPendingBit(TIM2 , TIM_FLAG_Update);
 

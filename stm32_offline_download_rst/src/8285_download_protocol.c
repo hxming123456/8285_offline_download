@@ -6,6 +6,9 @@ uint8_t update_status = 0;
 uint8_t nodata_flag;
 uint8_t sync_error_cnt = 0;
 uint8_t sync_flag=0;
+uint8_t all_time_flag = 0;
+uint32_t send_time = 0;
+uint8_t recv_over_flag = 0;
 
 void Data_formatt_write(uint8_t *packet,int packet_len,uint8_t packet_type)
 {
@@ -180,20 +183,21 @@ int Data_formatt_read(uint8_t *packet,int len)
 
 void wait_rxdata_available(int timeout)
 {
-	recv_time_out = timeout;
-	//stm32rx.avail = 0;
-	Debug_usart_write("wait recv data...\r\n",19,INFO_DEBUG);
+	recv_time_out = 6;
+	send_time = 400;
+
+
 #if 1
 	while(1)
 	{
-		if(stm32rx.avail == 1)
+		if(recv_over_flag == 1)
 		{
-			stm32rx.avail = 0;
-			Debug_usart_write("wait recv out\r\n",15,INFO_DEBUG);
+			recv_over_flag = 0;
 			break;
 		}
 	}
 #endif
+
 }
 
 void wait_baud_change(int timeout)
