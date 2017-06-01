@@ -146,10 +146,15 @@ int Data_formatt_read(uint8_t *packet,int len)
 {
 	uint8_t buf[512] = {0};
 	uint8_t recv_len = 0;
+	uint8_t recv[200] = {0};
 	int i = 0;
 	int j = 0;
 
 	recv_len = read_more_data_to_datapool(&stm32rx,buf,512);
+	Debug_usart_write("recv:",5,INFO_DEBUG);
+	more_hex_to_str(recv,buf,recv_len);
+	Debug_usart_write(recv,recv_len*2,INFO_DEBUG);
+	Debug_usart_write("\r\n",2,INFO_DEBUG);
 
 	if(recv_len > len)
 	{
@@ -185,7 +190,6 @@ void wait_rxdata_available(int timeout)
 {
 	recv_time_out = 6;
 	send_time = 400;
-
 
 #if 1
 	while(1)
@@ -527,6 +531,7 @@ int send_data_command(int type,int data_len,uint8_t seq)
 
 	wait_rxdata_available(10);
 	Data_formatt_read(flash_block_recv,20);
+	initDataPool(&stm32rx);
 
 	for(i=0;i<10;i++)
 	{

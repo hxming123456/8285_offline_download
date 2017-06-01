@@ -236,6 +236,36 @@ void hex_to_str(uint8_t *str,uint8_t hex)
 	}
 }
 
+void more_hex_to_str(uint8_t *str,uint8_t *hex,uint8_t len)
+{
+	uint8_t tmp=0x00;
+	uint8_t i = 0;
+	uint16_t j = 0;
+
+	for(i=0;i<len;i++)
+	{
+		tmp = hex[i] >> 4;
+		if(tmp >= 0 && tmp <= 9)
+		{
+			str[j++] = tmp + '0';
+		}
+		else if(tmp >= 10)
+		{
+			str[j++] = 'A' + tmp - 10;
+		}
+
+		tmp = hex[i] & 0x0F;
+		if(tmp >= 0 && tmp <= 9)
+		{
+			str[j++] = tmp + '0';
+		}
+		else if(tmp >= 10)
+		{
+			str[j++] = 'A' + tmp - 10;
+		}
+	}
+}
+
 uint8_t str_to_hex(uint8_t str1,uint8_t str2)
 {
 	uint8_t tmp=0xFF;

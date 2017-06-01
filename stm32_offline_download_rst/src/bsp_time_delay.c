@@ -55,6 +55,8 @@ void TIM2_NVIC_Configuration(void)
 
 void TIM2_IRQHandler(void)
 {
+	static fail_cnt = 0;
+
 	if ( TIM_GetITStatus(TIM2 , TIM_IT_Update) != RESET )
 	{
 #if 1
@@ -65,8 +67,19 @@ void TIM2_IRQHandler(void)
 				recv_time_out--;
 				if(recv_time_out==0)
 				{
+					fail_cnt = 0;
 					recv_over_flag = 1;
+					send_time = 0;
 					Debug_usart_write("out 1\r\n",7,INFO_DEBUG);
+				}
+			}
+			else if(stm32rx.stock<8 && send_time != 0)
+			{
+				send_time--;
+				if(send_time==0)
+				{
+					recv_over_flag = 1;
+					Debug_usart_write("out 2\r\n",7,INFO_DEBUG);
 				}
 			}
 		}

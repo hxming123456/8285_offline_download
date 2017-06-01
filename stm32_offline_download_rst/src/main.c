@@ -202,6 +202,8 @@ int main(int argc, char* argv[])
 	uint8_t ret = 0;
 	uint8_t flag = 0;
 	uint8_t start_count = 0;
+	uint32_t succeed_cnt = 0;
+	uint8_t buf[2] = {0};
 
 	system_clk_init();
 
@@ -263,13 +265,20 @@ int main(int argc, char* argv[])
 					if(ret==1)
 					{
 						SDcard_log_write((uint8_t*)"download ok\r\n\r\n",15,SDCRAD_LOG);
+						succeed_cnt++;
+						hex_to_str(buf,succeed_cnt);
+						Debug_usart_write("succeed cnt:",12,INFO_DEBUG);
+						Debug_usart_write(buf,2,INFO_DEBUG);
+						Debug_usart_write("\r\n",2,INFO_DEBUG);
 					}
 					else if(ret==2)
 					{
+						succeed_cnt = 0;
 						SDcard_log_write((uint8_t*)"download nok\r\n\r\n",16,SDCRAD_LOG);
 					}
 					else if(ret==3)
 					{
+						succeed_cnt = 0;
 						SDcard_log_write((uint8_t*)"download nodata\r\n\r\n",19,SDCRAD_LOG);
 					}
 				}
