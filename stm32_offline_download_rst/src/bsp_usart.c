@@ -2,15 +2,15 @@
 
 uint32_t usart_send_timeout = 0;
 
-void usart1_init()
+void usart1_init(int baud)
 {
 	USART_InitTypeDef USART_InitStructure;
 
 	usart1_gpio_init();
 
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1,ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1|RCC_APB2Periph_AFIO,ENABLE);
 
-	USART_InitStructure.USART_BaudRate = 115200;
+	USART_InitStructure.USART_BaudRate = baud;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
 	USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -32,6 +32,7 @@ void usart1_change_baud(uint32_t baud)
 
 	USART_Cmd(USART1, DISABLE);
 
+#if 1
 	USART_InitStructure.USART_BaudRate = baud;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
@@ -40,7 +41,7 @@ void usart1_change_baud(uint32_t baud)
 	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
 
 	USART_Init(USART1,&USART_InitStructure);
-
+#endif
 	USART_Cmd(USART1,ENABLE);
 }
 

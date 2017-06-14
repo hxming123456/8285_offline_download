@@ -19,6 +19,7 @@
 #include "8285_download_protocol.h"
 #include "8285_download_protocol.h"
 
+
 // ----------------------------------------------------------------------------
 //
 // Standalone STM32F1 empty sample (trace via DEBUG).
@@ -213,7 +214,7 @@ int main(int argc, char* argv[])
 	is_download_pin_init();
 
 	tim_init();
-	usart1_init();
+	usart1_init(115200);
 	Debug_usart_init();
 	iwdg_init();
 
@@ -256,7 +257,7 @@ int main(int argc, char* argv[])
 			}
 			else if(flag == 1)
 			{
-				ret = download_start(2250000,0);
+				ret = download_start(2250000,ISDATA_PIN_READ);
 				Debug_usart_write("baud:2250000\r\n",14,INFO_DEBUG);
 				//ret = download_start(1200000,ISDATA_PIN_READ);
 				if(ret != 0)

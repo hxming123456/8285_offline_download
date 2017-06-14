@@ -10,6 +10,9 @@ uint8_t all_time_flag = 0;
 uint32_t send_time = 0;
 uint8_t recv_over_flag = 0;
 
+uint8_t data_file_name[130] = {0};
+uint8_t bin_file_name[130] = {0};
+
 void Data_formatt_write(uint8_t *packet,int packet_len,uint8_t packet_type)
 {
 	uint8_t s=0;
@@ -256,6 +259,7 @@ int Change_baud_command(int baud)
 	change_command[9] = (baud>>8)&0xFF;
 	change_command[10] = (baud>>16)&0xFF;
 
+	iwdg_reload();
 	Data_formatt_write(change_command,16,HA_HEAD_HA_TAIL);
 	wait_rxdata_available(10);
 	Data_formatt_read(change_recv,20);
@@ -544,6 +548,97 @@ int send_data_command(int type,int data_len,uint8_t seq)
 	return 1;
 }
 
+int check_file_from_filedir(uint8_t isflag)
+{
+	FILINFO file_info;
+	DIR  dir;
+	int ret = 0;
+	uint8_t dirname[10] = {0};
+	uint8_t file_name[120] = {0};
+
+	TCHAR dir_info[120] = {0};
+	uint8_t csv_cnt = 0;;
+	uint8_t bin_cnt = 0;
+
+#if _USE_LFN
+	file_info.lfsize = sizeof(dir_info);
+	file_info.lfname = dir_info;
+#endif
+	memset(file_info.fname,0,13);
+
+	ret = f_getcwd((TCHAR *)dirname,(UINT)10);
+	if(ret == FR_OK)
+	{
+		Debug_usart_write(dirname,10,INFO_DEBUG);
+	}
+
+	ret = f_opendir(&dir,(const TCHAR *)dirname);
+	if(ret == FR_OK)
+	{
+		Debug_usart_write("open ok\r\n",9,INFO_DEBUG);
+		while(1)
+		{
+			ret = f_readdir(&dir,&file_info);
+			if(ret != FR_OK || file_info.fname[0]==0)
+			{
+				break;
+			}
+			else
+			{
+				if(file_info.lfname[0] != 0)
+				{
+					//Debug_usart_write("lfname\r\n",8,INFO_DEBUG);
+					//Debug_usart_write(file_info.lfname,file_info.lfsize,INFO_DEBUG);
+					//Debug_usart_write("\r\n",2,INFO_DEBUG);
+					strcpy((char *)file_name,(const char *)file_info.lfname);
+					memset(file_info.lfname,0,file_info.lfsize);
+				}
+				else
+				{
+					//Debug_usart_write("fname\r\n",7,INFO_DEBUG);
+					//Debug_usart_write(file_info.fname,13,INFO_DEBUG);
+					//Debug_usart_write("\r\n",2,INFO_DEBUG);
+					strcpy((char *)file_name,(const char *)file_info.fname);
+					memset(file_info.fname,0,13);
+				}
+
+				if(strstr((const char*)file_name,(const char*)"csv") != 0)
+				{
+					Debug_usart_write("come csv\r\n",10,INFO_DEBUG);
+					strcpy((char *)data_file_name,(const char *)file_name);
+					csv_cnt++;
+				}
+				if(strstr((const char*)file_name,(const char*)"bin") != 0)
+				{
+					Debug_usart_write("come bin\r\n",10,INFO_DEBUG);
+					strcpy((char *)bin_file_name,(const char *)file_name);
+					bin_cnt++;
+				}
+
+				memset(file_name,0,120);
+				memset(dir_info,0,120);
+			}
+		}
+		if(csv_cnt != 1)
+		{
+			if(isflag==1)
+			{
+				return 0;
+			}
+		}
+		if(bin_cnt != 1)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		Debug_usart_write("open nok\r\n",10,INFO_DEBUG);
+	}
+
+	return 1;
+}
+
 int download_sign_operate(int type)
 {
 	int ret;
@@ -577,7 +672,7 @@ int download_data_operate(int type)
 {
 		int ret = 1;
 		FIL fnew;
-		int num;
+		UINT num;
 		int seq=0;
 		uint8_t data_buf[98] = {0};
 		uint8_t buf[2]= {0};
@@ -586,34 +681,34 @@ int download_data_operate(int type)
 		ret = Erasing_data_command(type);
 		if(ret)
 		{
-			ret = f_open(&fnew,(uint8_t*)"0:data.csv",FA_READ | FA_WRITE);
+			ret = f_open(&fnew,(const TCHAR *)data_file_name,FA_READ | FA_WRITE);
 	#if 1
 			if(ret == FR_OK)
 			{
-				Debug_usart_write("csv read begin\r\n",16,INFO_DEBUG);
+				Debug_usart_write((void *)"csv read begin\r\n",16,INFO_DEBUG);
 				while(1)
 				{
-					ret = f_read(&fnew,data_buf,98,&num);
+					ret = f_read(&fnew,(void *)data_buf,(UINT)98,&num);
 					seq++;
 					if(ret == FR_OK)
 					{
 						if(num < 98)
 						{
 							f_close(&fnew);
-							Debug_usart_write("no csv data\r\n",13,INFO_DEBUG);
+							Debug_usart_write((void *)"no csv data\r\n",13,INFO_DEBUG);
 							nodata_flag = 1;
 							return 0;
 						}
 						file_point += 98;
 						if(data_buf[0] == 'Y')
 						{
-							Debug_usart_write("csv read cnt:",13,INFO_DEBUG);
+							Debug_usart_write((void *)"csv read cnt:",13,INFO_DEBUG);
 							hex_to_str(buf,seq);
 							Debug_usart_write(buf,2,INFO_DEBUG);
-							Debug_usart_write("\r\n",2,INFO_DEBUG);
-							Debug_usart_write("data:",5,INFO_DEBUG);
-							Debug_usart_write(&data_buf[2],10,INFO_DEBUG);
-							Debug_usart_write("\r\n",2,INFO_DEBUG);
+							Debug_usart_write((void *)"\r\n",2,INFO_DEBUG);
+							Debug_usart_write((void *)"data:",5,INFO_DEBUG);
+							Debug_usart_write((void *)&data_buf[2],10,INFO_DEBUG);
+							Debug_usart_write((void *)"\r\n",2,INFO_DEBUG);
 							change_datacsv_info(data_buf);
 							//change_datacsv_info("Y 10000258cc 47a29b06-a0f1-42ba-a704-14c41080afa7 d0:27:00:04:ae:e8 d0:27:00:04:ae:e9 PSF-A01-GL");
 							ret = send_data_command(DATA_INFO,4095,seq);
@@ -621,7 +716,7 @@ int download_data_operate(int type)
 							if(!ret)
 							{
 								f_close(&fnew);
-								Debug_usart_write("send_csv error\r\n",16,INFO_DEBUG);
+								Debug_usart_write((void *)"send_csv error\r\n",16,INFO_DEBUG);
 								return ret;
 							}
 							else
@@ -630,23 +725,23 @@ int download_data_operate(int type)
 								ret = f_lseek(&fnew,file_point-98);
 								if(ret == FR_OK)
 								{
-									Debug_usart_write("change file point ok\r\n",22,INFO_DEBUG);
+									Debug_usart_write((void *)"change file point ok\r\n",22,INFO_DEBUG);
 									ret = f_write(&fnew,data_buf,98,&num);
 									if ( ret == FR_OK )
 									{
 										f_close(&fnew);
 										SDcard_log_write((uint8_t*)"data:",5,SDCRAD_LOG);
 										SDcard_log_write(&data_buf[2],10,SDCRAD_LOG);
-										SDcard_log_write("\r\n",2,SDCRAD_LOG);
-										Debug_usart_write("change file ok\r\n",16,INFO_DEBUG);
-										Debug_usart_write("send_csv ok\r\n",16,INFO_DEBUG);
+										SDcard_log_write((uint8_t *)"\r\n",2,SDCRAD_LOG);
+										Debug_usart_write((void *)"change file ok\r\n",16,INFO_DEBUG);
+										Debug_usart_write((void *)"send_csv ok\r\n",16,INFO_DEBUG);
 										return 1;
 									}
 									else
 									{
 										f_close(&fnew);
-										Debug_usart_write("change file nok\r\n",17,INFO_DEBUG);
-										Debug_usart_write("send_csv error\r\n",16,INFO_DEBUG);
+										Debug_usart_write((void *)"change file nok\r\n",17,INFO_DEBUG);
+										Debug_usart_write((void *)"send_csv error\r\n",16,INFO_DEBUG);
 										return 0;
 									}
 								}
@@ -689,23 +784,25 @@ int download_bin_operate(int type)
 {
 	int ret;
 	FIL fnew;
-	int num;
+	UINT num;
 	int seq=0;
 	uint8_t buf[2] = {0};
 
 	ret = Erasing_data_command(type);
+
 	if(ret)
 	{
 		Debug_usart_write("bin eras ok\r\n",13,INFO_DEBUG);
-		ret = f_open(&fnew,(uint8_t*)"0:FWSW-0185-SWITCH-8285-1.6.2.bin",FA_READ);
-		Debug_usart_write("bin:FWSW-0185-SWITCH-8285-1.6.2.bin\r\n",37,INFO_DEBUG);
+		ret = f_open(&fnew,(const TCHAR *)bin_file_name,FA_READ);
+		Debug_usart_write(bin_file_name,strlen((const char *)bin_file_name),INFO_DEBUG);
+		Debug_usart_write("\r\n",2,INFO_DEBUG);
 #if 1
 		if(ret == FR_OK)
 		{
 			while(1)
 			{
 				Debug_usart_write("bin read begin\r\n",17,INFO_DEBUG);
-				ret = f_read(&fnew,origin_buf,16384,&num);
+				ret = f_read(&fnew,(void *)origin_buf,(UINT)16384,&num);
 				Debug_usart_write("bin read cnt:",13,INFO_DEBUG);
 				hex_to_str(buf,seq);
 				Debug_usart_write(buf,2,INFO_DEBUG);
@@ -816,7 +913,7 @@ int download_data_command(int type)
 int SDcard_log_write(uint8_t *buf,int32_t len,uint8_t islog_flag)
 {
 	int ret = 0;
-	int num = 0;
+	UINT num = 0;
 	int32_t point=0;
 	//uint8_t str[4] = {"1234"};
 	FIL fnew_log;
@@ -831,7 +928,7 @@ int SDcard_log_write(uint8_t *buf,int32_t len,uint8_t islog_flag)
 	if(ret==FR_OK)
 	{
 		ret = f_lseek(&fnew_cnf,0);
-		ret = f_read(&fnew_cnf,&point,4,&num);
+		ret = f_read(&fnew_cnf,(void *)&point,(UINT)4,&num);
 		if(ret==FR_OK)
 		{
 			ret = f_open(&fnew_log,"0:log.txt",FA_READ|FA_WRITE);
@@ -840,12 +937,12 @@ int SDcard_log_write(uint8_t *buf,int32_t len,uint8_t islog_flag)
 				ret = f_lseek(&fnew_log,point);
 				if(ret == FR_OK)
 				{
-					ret = f_write(&fnew_log,buf,len,&num);
+					ret = f_write(&fnew_log,(const void *)buf,len,&num);
 					if(ret == FR_OK)
 					{
 						point += len;
 						ret = f_lseek(&fnew_cnf,0);
-						ret = f_write(&fnew_cnf,&point,4,&num);
+						ret = f_write(&fnew_cnf,(const void *)&point,4,&num);
 						if(ret==FR_OK)
 						{
 							Debug_usart_write("SDcard log write succeed\r\n",26,INFO_DEBUG);
@@ -911,6 +1008,14 @@ int download_start(int baud,uint8_t isdata_flag)
 
 	update_light_status(DOWNLOAD_NOW_STATUS);
 
+	ret = check_file_from_filedir(isdata_flag);
+	if(!ret)
+	{
+		Debug_usart_write("check file nok\r\n",15,INFO_DEBUG);
+		update_light_status(NO_DATA_STATUS);
+		return NO_DATA;
+	}
+	Debug_usart_write("check file ok\r\n",14,INFO_DEBUG);
 #if 1
 	ret = rst_8266();
 	if(ret==0)
@@ -949,22 +1054,6 @@ int download_start(int baud,uint8_t isdata_flag)
 	}
 #endif
 
-#if 0
-	for(sync_error_cnt = 0; sync_error_cnt < 3; sync_error_cnt++)
-		{
-			ret = device_sync();
-			if(ret == 1)
-			{
-				break;
-			}
-		}
-
-		if(sync_error_cnt == 3)
-		{
-			ret=0;
-		}
-#endif
-
 	iwdg_reload();
 
 	if(ret)
@@ -994,7 +1083,7 @@ int download_start(int baud,uint8_t isdata_flag)
 		if(ret)
 		{
 			//if(1)
-			if(isdata_flag==0)
+			if(isdata_flag==1)
 			{
 				iwdg_reload();
 				ret = download_data_command(SIGN_INFO);

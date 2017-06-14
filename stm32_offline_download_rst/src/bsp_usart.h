@@ -10,7 +10,7 @@
 
 extern uint32_t usart_send_timeout;
 
-void usart1_init();
+void usart1_init(int baud);
 void usart1_write(uint8_t *data,uint32_t data_len);
 int usart1_read(uint8_t *data);
 void usart1_gpio_init(void);

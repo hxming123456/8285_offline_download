@@ -9,6 +9,7 @@
 #include ".//ff9//bsp_sdio_sdcard.h"
 #include "download_data_array.h"
 #include "bsp_iwdg.h"
+#include <string.h>
 
 extern uint8_t nodata_flag;
 extern uint32_t recv_time_out;
@@ -71,5 +72,6 @@ void change_sign_info(void);
 void wait_baud_change(int timeout);
 int rst_8266(void);
 int SDcard_log_write(uint8_t *buf,int32_t len,uint8_t islog_flag);
+int check_file_from_filedir(uint8_t isflag);
 
 #endif

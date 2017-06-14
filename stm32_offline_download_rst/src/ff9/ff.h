@@ -168,6 +168,7 @@ typedef struct {
 	TCHAR*	lfname;			/* Pointer to the LFN buffer */
 	UINT 	lfsize;			/* Size of LFN buffer in TCHAR */
 #endif
+
 } FILINFO;
 
 
@@ -333,5 +334,6 @@ int ff_del_syncobj (_SYNC_t);		/* Delete a sync object */
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif /* _FATFS */
