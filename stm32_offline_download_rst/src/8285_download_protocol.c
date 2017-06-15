@@ -560,6 +560,8 @@ int check_file_from_filedir(uint8_t isflag)
 	uint8_t csv_cnt = 0;;
 	uint8_t bin_cnt = 0;
 
+#if 1
+
 #if _USE_LFN
 	file_info.lfsize = sizeof(dir_info);
 	file_info.lfname = dir_info;
@@ -637,6 +639,9 @@ int check_file_from_filedir(uint8_t isflag)
 	}
 
 	return 1;
+#endif
+
+	return 0;
 }
 
 int download_sign_operate(int type)
@@ -1008,13 +1013,7 @@ int download_start(int baud,uint8_t isdata_flag)
 
 	update_light_status(DOWNLOAD_NOW_STATUS);
 
-	ret = check_file_from_filedir(isdata_flag);
-	if(!ret)
-	{
-		Debug_usart_write("check file nok\r\n",15,INFO_DEBUG);
-		update_light_status(NO_DATA_STATUS);
-		return NO_DATA;
-	}
+
 	Debug_usart_write("check file ok\r\n",14,INFO_DEBUG);
 #if 1
 	ret = rst_8266();
@@ -1027,6 +1026,15 @@ int download_start(int baud,uint8_t isdata_flag)
 	if(sync_error_cnt==0)
 	{
 		SDcard_log_write((uint8_t*)"download start\r\n",16,SDCRAD_LOG);
+	}
+
+	ret = check_file_from_filedir(isdata_flag);
+	if(!ret)
+	{
+		nodata_flag = 1;
+		Debug_usart_write("check file nok\r\n",15,INFO_DEBUG);
+		update_light_status(NO_DATA_STATUS);
+		return NO_DATA;
 	}
 
 	usart1_change_baud(115200);
