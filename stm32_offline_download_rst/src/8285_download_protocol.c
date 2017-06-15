@@ -573,6 +573,10 @@ int check_file_from_filedir(uint8_t isflag)
 	{
 		Debug_usart_write(dirname,10,INFO_DEBUG);
 	}
+	else
+	{
+		return 0;
+	}
 
 	ret = f_opendir(&dir,(const TCHAR *)dirname);
 	if(ret == FR_OK)
@@ -635,13 +639,12 @@ int check_file_from_filedir(uint8_t isflag)
 	}
 	else
 	{
-		Debug_usart_write("open nok\r\n",10,INFO_DEBUG);
+		Debug_usart_write("open dir nok\r\n",14,INFO_DEBUG);
+		return 0;
 	}
 
 	return 1;
 #endif
-
-	return 0;
 }
 
 int download_sign_operate(int type)
@@ -673,6 +676,7 @@ int download_sign_operate(int type)
 	}
 }
 
+#if 0
 int download_data_operate(int type)
 {
 		int ret = 1;
@@ -776,6 +780,154 @@ int download_data_operate(int type)
 				return 0;
 			}
 	#endif
+		}
+		else
+		{
+			Debug_usart_write("eras_csv_nok\r\n",14,FIRMWARE_BIN);
+			return 0;
+		}
+}
+#endif
+
+int download_data_operate(int type)
+{
+		int ret = 1;
+		FIL fnew;
+		UINT num;
+		int seq=0;
+		uint8_t data_buf[98] = {0};
+		uint8_t buf[2]= {0};
+		int file_point = 0;
+		int i = 0;
+		int read_cnt = 0;
+
+		ret = Erasing_data_command(type);
+		if(ret)
+		{
+			Debug_usart_write((void *)"eras_data_ok\r\n",14,INFO_DEBUG);
+			ret = f_open(&fnew,(const TCHAR *)data_file_name,FA_READ);
+			Debug_usart_write("csv_file:",9,INFO_DEBUG);
+			Debug_usart_write(data_file_name,strlen((const char *)data_file_name),INFO_DEBUG);
+			Debug_usart_write("\r\n",2,INFO_DEBUG);
+			while(1)
+			{
+				if(ret == FR_OK)
+				{
+					ret = f_read(&fnew,(void *)data_buf,(UINT)98,&num);
+					if(ret == FR_OK)
+					{
+						read_cnt++;
+						if(num < 98)
+						{
+							f_close(&fnew);
+							Debug_usart_write((void *)"no csv data\r\n",13,INFO_DEBUG);
+							nodata_flag = 1;
+							return 0;
+						}
+						else
+						{
+							if(data_buf[0] == 'Y')
+							{
+								Debug_usart_write((void *)"read csv over\r\n",15,INFO_DEBUG);
+								f_close(&fnew);
+								break;
+							}
+							else
+							{
+								file_point += 98;
+							}
+						}
+					}
+					else
+					{
+						Debug_usart_write((void *)"csv read error\r\n",16,INFO_DEBUG);
+					}
+				}
+				else
+				{
+					Debug_usart_write((void *)"csv file noopen one\r\n",21,INFO_DEBUG);
+				}
+			}
+
+			change_datacsv_info(data_buf);
+			ret = send_data_command(DATA_INFO,4095,seq);
+			if(!ret)
+			{
+				Debug_usart_write((void *)"send csv nok\r\n",14,INFO_DEBUG);
+				return 0;
+			}
+			else
+			{
+				ret = f_open(&fnew,(const TCHAR *)data_file_name,FA_READ | FA_WRITE);
+				if(ret == FR_OK)
+				{
+
+					ret = f_lseek(&fnew,file_point);
+					data_buf[0] = 'N';
+					ret = f_write(&fnew,data_buf,98,&num);
+					if(ret == FR_OK)
+					{
+						f_close(&fnew);
+						for(i=0;i<3;i++)
+						{
+							ret = f_open(&fnew,(const TCHAR *)data_file_name,FA_READ | FA_WRITE);
+							if(ret == FR_OK)
+							{
+								ret = f_lseek(&fnew,file_point);
+								if(ret == FR_OK)
+								{
+									ret = f_read(&fnew,(void *)data_buf,(UINT)98,&num);
+									if((ret==FR_OK) && (data_buf[0]=='N'))
+									{
+										f_close(&fnew);
+										Debug_usart_write((void *)"send_csv ok\r\n",16,INFO_DEBUG);
+										Debug_usart_write((void *)"change_csv ok\r\n",15,INFO_DEBUG);
+										Debug_usart_write((void *)"csv read cnt:",13,INFO_DEBUG);
+										hex_to_str(buf,read_cnt);
+										Debug_usart_write(buf,2,INFO_DEBUG);
+										Debug_usart_write((void *)"\r\n",2,INFO_DEBUG);
+										Debug_usart_write((void *)"data:",5,INFO_DEBUG);
+										Debug_usart_write((void *)&data_buf[2],10,INFO_DEBUG);
+										Debug_usart_write((void *)"\r\n",2,INFO_DEBUG);
+										SDcard_log_write((uint8_t*)"data:",5,SDCRAD_LOG);
+										SDcard_log_write(&data_buf[2],10,SDCRAD_LOG);
+										SDcard_log_write((uint8_t *)"\r\n",2,SDCRAD_LOG);
+										return 1;
+									}
+									else
+									{
+										Debug_usart_write((void *)"csv no change\r\n",16,INFO_DEBUG);
+										data_buf[0] = 'N';
+										ret = f_write(&fnew,data_buf,98,&num);
+										if(ret)
+											f_close(&fnew);
+										continue;
+									}
+								}
+								else
+								{
+									f_close(&fnew);
+									return 0;
+								}
+							}
+							else
+							{
+								Debug_usart_write((void *)"csv file noopen three\r\n",23,INFO_DEBUG);
+								return 0;
+							}
+						}
+					}
+					else
+					{
+						Debug_usart_write((void *)"csv write N error\r\n",19,INFO_DEBUG);
+						return 0;
+					}
+				}
+				else{
+					Debug_usart_write((void *)"csv file noopen two\r\n",21,INFO_DEBUG);
+					return 0;
+				}
+			}
 		}
 		else
 		{
