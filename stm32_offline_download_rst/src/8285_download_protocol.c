@@ -610,13 +610,13 @@ int check_file_from_filedir(uint8_t isflag)
 
 				if(strstr((const char*)file_name,(const char*)"csv") != 0)
 				{
-					Debug_usart_write("come csv\r\n",10,INFO_DEBUG);
+					Debug_usart_write("check csv\r\n",11,INFO_DEBUG);
 					strcpy((char *)data_file_name,(const char *)file_name);
 					csv_cnt++;
 				}
 				if(strstr((const char*)file_name,(const char*)"bin") != 0)
 				{
-					Debug_usart_write("come bin\r\n",10,INFO_DEBUG);
+					Debug_usart_write("check bin\r\n",11,INFO_DEBUG);
 					strcpy((char *)bin_file_name,(const char *)file_name);
 					bin_cnt++;
 				}
@@ -1116,14 +1116,9 @@ int SDcard_log_write(uint8_t *buf,int32_t len,uint8_t islog_flag)
 			}
 			else
 			{
-				f_close(&fnew_log);
 				f_close(&fnew_cnf);
 			}
 		}
-	}
-	else
-	{
-		f_close(&fnew_cnf);
 	}
 
 	return 1;

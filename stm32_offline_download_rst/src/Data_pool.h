@@ -17,6 +17,9 @@ typedef struct DataPool{
 }Datapool;
 
 Datapool stm32rx;
+Datapool debug_pool;
+
+#define DEBUG_POOL 0
 
 uint8_t initDataPool(Datapool *obj);
 uint32_t updateRing(uint32_t len,uint32_t n);

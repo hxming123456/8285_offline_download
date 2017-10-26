@@ -7,6 +7,8 @@ C_SRCS += \
 ../src/8285_download_protocol.c \
 ../src/Data_pool.c \
 ../src/_write.c \
+../src/bsp_eeprom.c \
+../src/bsp_iic_gpio_simulate.c \
 ../src/bsp_iwdg.c \
 ../src/bsp_time_delay.c \
 ../src/bsp_usart.c \
@@ -18,6 +20,8 @@ OBJS += \
 ./src/8285_download_protocol.o \
 ./src/Data_pool.o \
 ./src/_write.o \
+./src/bsp_eeprom.o \
+./src/bsp_iic_gpio_simulate.o \
 ./src/bsp_iwdg.o \
 ./src/bsp_time_delay.o \
 ./src/bsp_usart.o \
@@ -29,6 +33,8 @@ C_DEPS += \
 ./src/8285_download_protocol.d \
 ./src/Data_pool.d \
 ./src/_write.d \
+./src/bsp_eeprom.d \
+./src/bsp_iic_gpio_simulate.d \
 ./src/bsp_iwdg.d \
 ./src/bsp_time_delay.d \
 ./src/bsp_usart.d \

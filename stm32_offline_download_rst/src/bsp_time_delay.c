@@ -6,13 +6,17 @@ int32_t data_cnt = 0;
 int32_t sync_time = 0;
 int32_t nodata_time = 0;
 
+uint32_t recv_timeout_start = 0;
+uint32_t recv_timeout_end = 0;
+uint32_t recv_timeout = 0;
+uint32_t pool_wait_time = 0;
+
 extern uint8_t nodata_flag;
 extern uint8_t update_status;
 extern uint32_t recv_time_out;
 extern int32_t cnt_time;
 extern uint8_t wait_baud_flag;
 extern uint32_t usart_send_timeout;
-extern uint8_t all_time_flag;
 extern uint32_t send_time;
 extern uint8_t recv_over_flag;
 
@@ -55,7 +59,7 @@ void TIM2_NVIC_Configuration(void)
 
 void TIM2_IRQHandler(void)
 {
-	static fail_cnt = 0;
+	static uint32_t fail_cnt = 0;
 
 	if ( TIM_GetITStatus(TIM2 , TIM_IT_Update) != RESET )
 	{
@@ -82,6 +86,23 @@ void TIM2_IRQHandler(void)
 					Debug_usart_write("out 2\r\n",7,INFO_DEBUG);
 				}
 			}
+		}
+
+		if(recv_timeout_start==1)
+		{
+			if(recv_timeout < pool_wait_time)
+			{
+				recv_timeout++;
+			}
+			else
+			{
+				recv_timeout_start = 0;
+				recv_timeout_end = 1;
+			}
+		}
+		else
+		{
+			recv_timeout = 0;
 		}
 
 #else

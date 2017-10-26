@@ -30,7 +30,8 @@ src/main.o: ../src/main.c ../system/include/diag/Trace.h \
  ../src/Data_pool.h ../src/8285_download_protocol.h ../src/clib.h \
  ../src/bsp_usart.h ../src/.//ff9//ff.h ../src/.//ff9//integer.h \
  ../src/.//ff9//ffconf.h ../src/.//ff9//bsp_sdio_sdcard.h \
- ../src/download_data_array.h ../src/bsp_iwdg.h
+ ../src/download_data_array.h ../src/bsp_iwdg.h ../src/bsp_eeprom.h \
+ ../src/bsp_iic_gpio_simulate.h
 
 ../system/include/diag/Trace.h:
 
@@ -115,3 +116,7 @@ src/main.o: ../src/main.c ../system/include/diag/Trace.h \
 ../src/download_data_array.h:
 
 ../src/bsp_iwdg.h:
+
+../src/bsp_eeprom.h:
+
+../src/bsp_iic_gpio_simulate.h:

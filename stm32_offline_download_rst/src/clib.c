@@ -129,13 +129,13 @@ int32_t Atoi(uint8_t *str)
 
 }
 
-void Itoa(int32_t i, uint8_t *string)
+void Itoa(uint32_t i, uint8_t *string)
 {
-	int32_t power = 0, j = 0;
+	uint32_t power = 0, j = 0;
 
 	j = i;
 
-	for (power = 1; j > 10; j /= 10)
+	for (power = 1; j >= 10; j /= 10)
 	{
 		power *= 10;
 	}

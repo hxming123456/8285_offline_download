@@ -17,7 +17,8 @@
 #include ".//ff9//bsp_sdio_sdcard.h"
 #include "bsp_iwdg.h"
 #include "8285_download_protocol.h"
-#include "8285_download_protocol.h"
+#include "bsp_eeprom.h"
+
 
 
 // ----------------------------------------------------------------------------
@@ -42,8 +43,12 @@
 
 ErrorStatus HSEStartUpStatus;
 
+uint32_t use_cnt = 0;
+
 extern int32_t cnt_time;
+
 #define ISDATA_PIN_READ GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_6)
+#define EEP_ADDRESS	0x01
 
 
 void system_clk_init(void)
@@ -196,6 +201,136 @@ void SD_test()
 #endif
 }
 
+void Get_eeprom_data(void)
+{
+	uint8_t buf[5] = {0x00};
+	uint8_t num_str[10] = {0x00};
+	uint8_t ret = 0;
+
+#if 1
+	ret = eep_read_data(buf,5,EEP_ADDRESS);
+	if(ret != 0)
+	{
+		Debug_usart_write("read EEPROM NOK\r\n",17,INFO_DEBUG);
+	}
+
+	if(buf[0] == 'Y')
+	{
+		use_cnt = (((((buf[1]>>8)+buf[2])<<8)+buf[3])<<8)+buf[4];//00000000 00000000 00000000 00000001  1(uint32_t)
+		Itoa(use_cnt,num_str);									 //buf[1]	buf[2]	 buf[3]	  buf[4]
+		Debug_usart_write("eep read:",9,INFO_DEBUG);
+		Debug_usart_write(num_str,10,INFO_DEBUG);
+		Debug_usart_write("\r\n",2,INFO_DEBUG);
+		Debug_usart_write("read EEPROM OK\r\n",16,INFO_DEBUG);
+	}
+	else
+#endif
+	{
+		buf[0] = 'Y';
+		buf[1] = 0;
+		buf[2] = 0;
+		buf[3] = 0;
+		buf[4] = 0;
+		ret = eep_write_data(buf,5,EEP_ADDRESS);
+		if(ret != 0)
+		{
+			Debug_usart_write("write EEPROM NOK\r\n",18,INFO_DEBUG);
+		}
+		else
+		{
+			Debug_usart_write("write EEPROM OK\r\n",17,INFO_DEBUG);
+		}
+	}
+	iwdg_reload();
+}
+
+void update_use_cnt_to_eeprom(uint32_t use_cnt)
+{
+	uint8_t ret = 0;
+	uint8_t buf[5] = {0};
+	uint32_t test = 0;
+	uint8_t num_str[6] = {0};
+
+	buf[0] = 'Y';
+	buf[1] = (use_cnt>>24)&0xff;
+	buf[2] = (use_cnt>>16)&0xff;
+	buf[3] = (use_cnt>>8)&0xff;
+	buf[4] = use_cnt&0xff;
+	ret = eep_write_data(buf,5,EEP_ADDRESS);
+	if(ret != 0)
+	{
+		Debug_usart_write("update EEPROM NOK\r\n",19,INFO_DEBUG);
+	}
+	else
+	{
+		Debug_usart_write("update EEPROM OK\r\n",18,INFO_DEBUG);
+	}
+
+	Debug_usart_write("update:",7,INFO_DEBUG);
+	Itoa(use_cnt,num_str);
+	Debug_usart_write(num_str,6,INFO_DEBUG);
+	Debug_usart_write("\r\n",2,INFO_DEBUG);
+
+	ret = eep_read_data(buf,5,EEP_ADDRESS);
+	if(ret != 0)
+	{
+		Debug_usart_write("check update eep NOK\r\n",22,INFO_DEBUG);
+	}
+	else
+	{
+		test = (((((buf[1]>>8)+buf[2])<<8)+buf[3])<<8)+buf[4];
+
+		Debug_usart_write("check:",6,INFO_DEBUG);
+		memset(num_str,0,5);
+		Itoa(test,num_str);
+		Debug_usart_write(num_str,5,INFO_DEBUG);
+		Debug_usart_write("\r\n",2,INFO_DEBUG);
+
+		if(test == use_cnt)
+		{
+			Debug_usart_write("check update eep OK\r\n",21,INFO_DEBUG);
+		}
+		else
+		{
+			Debug_usart_write("check update eep NOK\r\n",22,INFO_DEBUG);
+		}
+	}
+}
+
+void check_debug_pool_info(void)
+{
+	uint8_t recv[100] = {0};
+	uint32_t recv_len = 0;
+	uint8_t  num_str[5] = {0};
+
+	recv_len = pool_recv_one_command(&debug_pool,recv,100,DEBUG_POOL,4,4);
+	if(recv_len > 0)
+	{
+		if(strcmp((const char *)recv,(const char *)"AT+USECNT\r\n")==0)
+		{
+			Itoa(use_cnt,num_str);
+			Debug_usart_write("AT+USECNT=",10,INFO_DEBUG);
+			Debug_usart_write(num_str,str_len(num_str),INFO_DEBUG);
+			Debug_usart_write("\r\n",2,INFO_DEBUG);
+		}
+		else
+		{
+#if 1
+			if(strcmp((const char *)recv,(const char *)"AT+USERST\r\n")==0)
+			{
+				use_cnt = 0;
+				update_use_cnt_to_eeprom(use_cnt);
+				Debug_usart_write("AT+USERST=OK\r\n",14,INFO_DEBUG);
+			}
+#endif
+		}
+	}
+	else
+	{
+		;//Debug_usart_write("pool nodata\r\n",13,INFO_DEBUG);
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	FATFS fs;
@@ -217,9 +352,10 @@ int main(int argc, char* argv[])
 	usart1_init(115200);
 	Debug_usart_init();
 	iwdg_init();
-
+	I2C_gpio_init();
 
 	initDataPool(&stm32rx);
+	initDataPool(&debug_pool);
 
 	NVIC_Configuration();
 
@@ -236,11 +372,15 @@ int main(int argc, char* argv[])
 	Debug_usart_write("reset\r\n",7,INFO_DEBUG);
 	SDcard_log_write((uint8_t*)"software reset\r\n",16,SDCRAD_LOG);
 
+#if 1
+	Get_eeprom_data();
+
 	while(1)
 	{
 		if(cnt_time>=80)
 		{
 			iwdg_reload();
+			//Debug_usart_write("COME IN\r\n",9,INFO_DEBUG);
 			//Debug_usart_write(&flag,1,INFO_DEBUG);
 			if(flag == 0)
 			{
@@ -283,6 +423,11 @@ int main(int argc, char* argv[])
 						SDcard_log_write((uint8_t*)"download nodata\r\n\r\n",19,SDCRAD_LOG);
 					}
 				}
+				if(ret != 0)
+				{
+					use_cnt++;
+					update_use_cnt_to_eeprom(use_cnt);
+				}
 			}
 			else
 			{
@@ -291,7 +436,9 @@ int main(int argc, char* argv[])
 			cnt_time = 0;
 
 		}
+		check_debug_pool_info();
 	}
+#endif
 }
 
 void SDIO_IRQHandler(void)

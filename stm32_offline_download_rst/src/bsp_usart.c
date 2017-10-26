@@ -234,6 +234,64 @@ int Debug_usart_read(uint8_t *data)
 	return i;
 }
 
+uint32_t pool_recv_one_command(Datapool *pool_type,uint8_t *buf,uint32_t len,uint32_t type,uint32_t rcv_outtime,uint32_t nrcv_outtime)
+{
+	uint32_t i = 0;
+	uint32_t status = 0;
+	uint8_t c = 0;
+
+	pool_wait_time = nrcv_outtime;
+	status = 0;
+
+	while(1)
+	{
+		if(pool_type->stock > 0)
+		{
+			if(i==len)
+			{
+				break;
+			}
+			else
+			{
+				if(read_one_data_to_datapool(pool_type,&c)==0)
+				{
+					if(type == DEBUG_POOL)
+					{
+						buf[i] = c;
+						i++;
+					}
+					else
+					{
+						;
+					}
+				}
+			}
+			recv_timeout_start = 0;
+			recv_timeout_end = 0;
+
+			pool_wait_time = rcv_outtime;
+			status = 0;
+		}
+		else if(status == 0)
+		{
+			recv_timeout_start = 1;
+			recv_timeout = 0;
+			status++;
+		}
+
+		if(status == 1)
+		{
+			if(recv_timeout_end==1)
+			{
+				recv_timeout_end = 0;
+				break;
+			}
+		}
+	}
+
+	return i;
+}
+
 void USART1_IRQHandler(void)
 {
 	uint8_t c;
@@ -243,7 +301,6 @@ void USART1_IRQHandler(void)
 		USART_ClearITPendingBit(USART1,USART_IT_RXNE);
 		c = USART_ReceiveData(USART1);
 		write_one_data_to_datapool(&stm32rx,c);
-		//usart2_write(&c,1);
 	}
 }
 
@@ -251,11 +308,10 @@ void USART2_IRQHandler(void)
 {
 	uint8_t c;
 
-		if(USART_GetITStatus(USART2, USART_IT_RXNE) != RESET)
-		{
-			USART_ClearITPendingBit(USART2,USART_IT_RXNE);
-			c = USART_ReceiveData(USART2);
-			//write_one_data_to_datapool(&stm32rx,c);
-			usart1_write(&c,1);
-		}
+	if(USART_GetITStatus(USART2, USART_IT_RXNE) != RESET)
+	{
+		USART_ClearITPendingBit(USART2,USART_IT_RXNE);
+		c = USART_ReceiveData(USART2);
+		write_one_data_to_datapool(&debug_pool,c);
+	}
 }
